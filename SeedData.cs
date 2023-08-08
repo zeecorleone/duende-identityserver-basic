@@ -4,6 +4,12 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.Models;
 using IDS.TestData;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+using Duende.IdentityServer;
+using IdentityModel;
+using static Duende.IdentityServer.Models.IdentityResources;
+using System.Text.Json;
 
 namespace IDSWithEFStoreSeedData;
 
@@ -18,6 +24,7 @@ public class SeedData
             var context = scope.ServiceProvider.GetService<ConfigurationDbContext>();
             context.Database.Migrate();
             EnsureSeedData(context);
+            EnsureUsers(scope);
         }
     }
 
@@ -27,7 +34,7 @@ public class SeedData
         if (!context.Clients.Any())
         {
             Log.Debug("Clients being populated");
-            
+
             foreach (var client in Config.Clients.ToList())
             {
                 context.Clients.Add(client.ToEntity());
@@ -67,10 +74,10 @@ public class SeedData
             Log.Debug("ApiScopes already populated");
         }
 
-        if(!context.ApiResources.Any())
+        if (!context.ApiResources.Any())
         {
             Log.Debug("ApiResources bing populated");
-            foreach(var resource in Config.ApiResources.ToList())
+            foreach (var resource in Config.ApiResources.ToList())
             {
                 context.ApiResources.Add(resource.ToEntity());
             }
@@ -97,5 +104,77 @@ public class SeedData
         {
             Log.Debug("OIDC IdentityProviders already populated");
         }
+    }
+
+    private static void EnsureUsers(IServiceScope scope)
+    {
+        var userMgr = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+        var alice = userMgr.FindByNameAsync("alice").Result;
+        if (alice == null)
+        {
+            alice = new IdentityUser
+            {
+                UserName = "alice",
+                Email = "alicesmith@email.com",
+                EmailConfirmed = true,
+
+            };
+            var result = userMgr.CreateAsync(alice, "Pass123$").Result;
+            if (!result.Succeeded)
+                throw new Exception(result.Errors.First().Description);
+
+            result = userMgr.AddClaimsAsync(alice, new Claim[]
+            {
+                new Claim(JwtClaimTypes.Name, "Alice Smith"),
+                new Claim(JwtClaimTypes.GivenName, "Alice"),
+                new Claim(JwtClaimTypes.FamilyName, "Smith"),
+                new Claim(JwtClaimTypes.Email, "AliceSmith@email.com"),
+                new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                new Claim(JwtClaimTypes.WebSite, "http://alice.com")
+            }).Result;
+            if (!result.Succeeded)
+                throw new Exception(result.Errors.First().Description);
+
+            Log.Debug("User alice created");
+        }
+        else
+        {
+            Log.Debug("user 'alice' already exists");
+        }
+
+       
+        var bob = userMgr.FindByNameAsync("bob").Result;
+        if (bob == null)
+        {
+            bob = new IdentityUser
+            {
+                UserName = "bob",
+                Email = "bobsmith@email.com",
+                EmailConfirmed = true,
+
+            };
+            var result = userMgr.CreateAsync(bob, "Pass123$").Result;
+            if (!result.Succeeded)
+                throw new Exception(result.Errors.First().Description);
+
+            result = userMgr.AddClaimsAsync(bob, new Claim[]
+            {
+                new Claim(JwtClaimTypes.Name, "Bob Smith"),
+                new Claim(JwtClaimTypes.GivenName, "Bob"),
+                new Claim(JwtClaimTypes.FamilyName, "Smith"),
+                new Claim(JwtClaimTypes.Email, "BobSmith@email.com"),
+                new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
+                new Claim(JwtClaimTypes.WebSite, "http://bobsmith.com")
+            }).Result;
+            if (!result.Succeeded)
+                throw new Exception(result.Errors.First().Description);
+
+            Log.Debug("User bob created");
+        }
+        else
+        {
+            Log.Debug("user 'bob' already exists");
+        }
+
     }
 }

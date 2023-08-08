@@ -1,7 +1,9 @@
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
+using IDS.Database;
 using IDS.TestData;
 using IDSWithEFStoreSeedData;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
@@ -22,6 +24,15 @@ var connectionString = configuration.GetConnectionString("DefaultConnection");
 
 var migrationsAssembly = typeof(Config).Assembly.GetName().Name;
 
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlite(connectionString, sqlOptions => sqlOptions.MigrationsAssembly(migrationsAssembly));
+});
+
+builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+
 builder.Services.AddRazorPages();
 builder.Services.AddIdentityServer(options =>
 {
@@ -36,7 +47,8 @@ builder.Services.AddIdentityServer(options =>
                                                                          opt => opt.MigrationsAssembly(migrationsAssembly)))
     .AddOperationalStore(options => options.ConfigureDbContext = b => b.UseSqlite(connectionString,
                                                                          opt => opt.MigrationsAssembly(migrationsAssembly)))
-    .AddTestUsers(IDS.TestData.TestUsers.Users)
+    .AddAspNetIdentity<IdentityUser>()
+    //.AddTestUsers(IDS.TestData.TestUsers.Users)
     //.AddInMemoryClients(IDS.TestData.Config.Clients)
     //.AddInMemoryApiResources(IDS.TestData.Config.ApiResources)
     //.AddInMemoryApiScopes(IDS.TestData.Config.ApiScopes)
@@ -58,6 +70,20 @@ builder.Services.AddIdentityServer(options =>
 //then run appdate command to apply migrations:
 //1. dotnet ef database update -c PersistedGrantDbContext
 //2. dotnet ef database update -c ConfigurationDbContext
+
+//in order to use Aspnet Identity users instead of in-memory install following packages:
+//1. Duende.IdentityServer.AspNetIdentity 
+//2. add: builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>();
+// then run migrations:
+//      dotnet ef migrations add InitialIdentityServerMigration -c ApplicationDbContext
+// then run update command to apply migrations
+//      dotnet ef database update -c ApplicationDbContext
+//
+// Now remove TestUserStore references from following, and update with actual
+//1. Pages > Account > Login > Login.cshtml.cs
+//      Remove TestUserStore and Inject SignInManager and user that instead
+//1. Pages > ExternalLogin > Callback > Callback.cshtml.cs
+//      Remove TestUserStore and Inject SignInManager and user that instead
 
 builder.Services.AddAuthentication();
 
