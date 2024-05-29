@@ -1,5 +1,5 @@
 
-# duende-identityserver-basic ![Logo](https://img.shields.io/badge/.NET-6.0-blue) ![SQLite](https://img.shields.io/badge/SQLite-3.0-lightgrey) ![License](https://img.shields.io/github/license/yourusername/duende-identityserver-basic)
+# duende-identityserver-basic ![Logo](https://img.shields.io/badge/.NET-6.0-blue) ![SQLite](https://img.shields.io/badge/SQLite-3.0-lightgrey) ![License](https://img.shields.io/github/license/zeecorleone/duende-identityserver-basic)
 
 ## Introduction
 Welcome to the **Duende Identity Server Basic** repository! This project provides a basic implementation of the Duende Identity Server using .NET 6 and SQLite. It serves as a starting point for integrating identity management and authorization into your applications.
@@ -62,7 +62,7 @@ This project uses SQLite for simplicity, but you can configure it to use any oth
     ```
 
 ## Usage
-Once the application is running, you can access the Identity Server at `https://localhost:5001`.
+Once the application is running, you can access the Identity Server at `https://localhost:7015`.
 
 
 
